@@ -51,14 +51,16 @@ func (s *Server) listen() {
 			for {
 				buf := make([]byte, 512)
 				// Read bytes from client.
-				byteSize, err := conn.Read(buf)
+				cnt, err := conn.Read(buf)
 				if err != nil {
 					fmt.Println("rece buf err", err)
 					continue
 				}
 
+				fmt.Printf("recv client buf %s, cnt %d\n", buf, cnt)
+
 				// Write back bytes to client.
-				if _, err := conn.Write(buf[:byteSize]); err != nil {
+				if _, err := conn.Write(buf[:cnt]); err != nil {
 					fmt.Println("write back buf err", err)
 					continue
 				}
