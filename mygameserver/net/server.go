@@ -1,6 +1,7 @@
 package net
 
 import (
+	"errors"
 	"fmt"
 	"github.com/dontcampy/my-game-server/mygameserver/iface"
 	"net"
@@ -12,6 +13,17 @@ type Server struct {
 	IPVersion string
 	IP        string
 	Port      int
+}
+
+// CallBackToClient simple handleAPI
+func CallBackToClient(conn *net.TCPConn, data []byte, cnt int) error {
+	fmt.Println("[Conn Handler] CallBackToClient ...")
+	if _, err := conn.Write(data[:cnt]); err != nil {
+		fmt.Println("write back buf err", err)
+		return errors.New("CallBackToClient error")
+	}
+
+	return nil
 }
 
 func (s *Server) Start() {
@@ -37,6 +49,7 @@ func (s *Server) listen() {
 	}
 
 	fmt.Println("Start server successfully, ", s.Name, ", listening...")
+	var cid uint32 = 0
 
 	// Waiting for client.
 	for {
@@ -46,26 +59,11 @@ func (s *Server) listen() {
 			continue
 		}
 
-		// Simple write-back.
-		go func() {
-			for {
-				buf := make([]byte, 512)
-				// Read bytes from client.
-				cnt, err := conn.Read(buf)
-				if err != nil {
-					fmt.Println("rece buf err", err)
-					continue
-				}
-
-				fmt.Printf("recv client buf %s, cnt %d\n", buf, cnt)
-
-				// Write back bytes to client.
-				if _, err := conn.Write(buf[:cnt]); err != nil {
-					fmt.Println("write back buf err", err)
-					continue
-				}
-			}
-		}()
+		// Init connection.
+		dealConn := NewConnection(conn, cid, CallBackToClient)
+		cid += 1
+		// Start.
+		go dealConn.Start()
 	}
 }
 
