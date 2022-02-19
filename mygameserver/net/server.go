@@ -3,6 +3,7 @@ package net
 import (
 	"fmt"
 	"github.com/dontcampy/my-game-server/mygameserver/iface"
+	"github.com/dontcampy/my-game-server/mygameserver/utils"
 	"net"
 )
 
@@ -18,17 +19,29 @@ type Server struct {
 // NewServer /*
 func NewServer(name string) iface.IServer {
 	s := &Server{
-		Name:      name,
+		Name:      utils.GlobalObject.Name,
 		IPVersion: "tcp4",
-		IP:        "0.0.0.0",
-		Port:      8999,
+		IP:        utils.GlobalObject.Host,
+		Port:      utils.GlobalObject.TcpPort,
 		Router:    nil,
 	}
+	utils.GlobalObject.TcpServer = s
 	return s
 }
 
 func (s *Server) Start() {
-	fmt.Printf("[Start] Server Listening at IP: %s, Port %d, is starting\n", s.IP, s.Port)
+	fmt.Printf(
+		"[MyServer] Server Name: %s, listeneer at IP: %s, Port:%d\n",
+		utils.GlobalObject.Name,
+		utils.GlobalObject.Host,
+		utils.GlobalObject.TcpPort,
+	)
+	fmt.Printf(
+		"[MyServer] Version %s, MaxConn: %d, MaxPackageSize: %d\n",
+		utils.GlobalObject.Version,
+		utils.GlobalObject.MaxConn,
+		utils.GlobalObject.MaxPackageSize,
+	)
 
 	go s.listen()
 }

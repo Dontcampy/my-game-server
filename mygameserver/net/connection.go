@@ -3,6 +3,7 @@ package net
 import (
 	"fmt"
 	"github.com/dontcampy/my-game-server/mygameserver/iface"
+	"github.com/dontcampy/my-game-server/mygameserver/utils"
 	"net"
 )
 
@@ -33,7 +34,7 @@ func (c *Connection) StartReader() {
 
 	for {
 		// Read client data to the buffer, max size 512.
-		buf := make([]byte, 512)
+		buf := make([]byte, utils.GlobalObject.MaxPackageSize)
 		_, err := c.Conn.Read(buf)
 		if err != nil {
 			fmt.Println("recv buf err", err)
