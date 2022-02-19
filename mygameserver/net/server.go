@@ -1,7 +1,6 @@
 package net
 
 import (
-	"errors"
 	"fmt"
 	"github.com/dontcampy/my-game-server/mygameserver/iface"
 	"net"
@@ -13,17 +12,19 @@ type Server struct {
 	IPVersion string
 	IP        string
 	Port      int
+	Router    iface.IRouter
 }
 
-// CallBackToClient simple handleAPI
-func CallBackToClient(conn *net.TCPConn, data []byte, cnt int) error {
-	fmt.Println("[Conn Handler] CallBackToClient ...")
-	if _, err := conn.Write(data[:cnt]); err != nil {
-		fmt.Println("write back buf err", err)
-		return errors.New("CallBackToClient error")
+// NewServer /*
+func NewServer(name string) iface.IServer {
+	s := &Server{
+		Name:      name,
+		IPVersion: "tcp4",
+		IP:        "0.0.0.0",
+		Port:      8999,
+		Router:    nil,
 	}
-
-	return nil
+	return s
 }
 
 func (s *Server) Start() {
@@ -60,7 +61,7 @@ func (s *Server) listen() {
 		}
 
 		// Init connection.
-		dealConn := NewConnection(conn, cid, CallBackToClient)
+		dealConn := NewConnection(conn, cid, s.Router)
 		cid += 1
 		// Start.
 		go dealConn.Start()
@@ -80,16 +81,7 @@ func (s *Server) Serve() {
 	select {}
 }
 
-/*
-Initialize Server
-*/
-
-func NewServer(name string) iface.IServer {
-	s := &Server{
-		Name:      name,
-		IPVersion: "tcp4",
-		IP:        "0.0.0.0",
-		Port:      8999,
-	}
-	return s
+func (s *Server) AddRouter(router iface.IRouter) {
+	s.Router = router
+	fmt.Println("Add router successfully.")
 }
