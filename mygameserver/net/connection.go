@@ -14,6 +14,7 @@ type Connection struct {
 	isClosed       bool
 	ExitChan       chan bool
 	MessageHandler iface.IMessageHandler
+	MessageChannel chan []byte
 }
 
 func NewConnection(conn *net.TCPConn, connID uint32, messageHandler iface.IMessageHandler) *Connection {
@@ -23,14 +24,15 @@ func NewConnection(conn *net.TCPConn, connID uint32, messageHandler iface.IMessa
 		isClosed:       false,
 		ExitChan:       make(chan bool, 1),
 		MessageHandler: messageHandler,
+		MessageChannel: make(chan []byte),
 	}
 
 	return c
 }
 
 func (c *Connection) StartReader() {
-	fmt.Println("Read")
-	defer fmt.Println("connID = ", c.ConnID, "Reader is exit, remote addr is ", c.RemoteAddr().String())
+	fmt.Println("[Reader Goroutine is running]")
+	defer fmt.Println("[Reader is exit], connID = ", c.ConnID, ", remote addr is ", c.RemoteAddr().String())
 	defer c.Stop()
 
 	dp := NewDataPack()
@@ -79,9 +81,28 @@ func (c *Connection) StartReader() {
 	}
 }
 
+func (c *Connection) StartWriter() {
+	fmt.Println("[Writer Goroutine is running]")
+	defer fmt.Println("[Writer is exit], connID = ", c.ConnID, ", remote addr is ", c.RemoteAddr().String())
+
+	for true {
+		select {
+		case data := <-c.MessageChannel:
+			_, err := c.Conn.Write(data)
+			if err != nil {
+				fmt.Println("Send data error, ", err)
+				return
+			}
+		case <-c.ExitChan:
+			return
+		}
+	}
+}
+
 func (c *Connection) Start() {
 	fmt.Println("Conn Start()... ConnID = ", c.ConnID)
 	go c.StartReader()
+	go c.StartWriter()
 }
 
 func (c *Connection) Stop() {
@@ -93,7 +114,11 @@ func (c *Connection) Stop() {
 	c.isClosed = true
 
 	c.Conn.Close()
+
+	c.ExitChan <- true
+
 	close(c.ExitChan)
+	close(c.MessageChannel)
 }
 
 func (c *Connection) GetTCPConnection() *net.TCPConn {
@@ -120,11 +145,6 @@ func (c *Connection) SendMessage(id uint32, content []byte) error {
 		return err
 	}
 
-	// send pack
-	_, err = c.Conn.Write(pack)
-	if err != nil {
-		return err
-	}
-
+	c.MessageChannel <- pack
 	return nil
 }
