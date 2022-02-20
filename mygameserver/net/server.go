@@ -9,21 +9,21 @@ import (
 
 // Server IServer implement
 type Server struct {
-	Name      string
-	IPVersion string
-	IP        string
-	Port      int
-	Router    iface.IRouter
+	Name           string
+	IPVersion      string
+	IP             string
+	Port           int
+	MessageHandler iface.IMessageHandler
 }
 
 // NewServer /*
 func NewServer(name string) iface.IServer {
 	s := &Server{
-		Name:      utils.GlobalObject.Name,
-		IPVersion: "tcp4",
-		IP:        utils.GlobalObject.Host,
-		Port:      utils.GlobalObject.TcpPort,
-		Router:    nil,
+		Name:           name,
+		IPVersion:      "tcp4",
+		IP:             utils.GlobalObject.Host,
+		Port:           utils.GlobalObject.TcpPort,
+		MessageHandler: NewMessageHandler(),
 	}
 	utils.GlobalObject.TcpServer = s
 	return s
@@ -74,7 +74,7 @@ func (s *Server) listen() {
 		}
 
 		// Init connection.
-		dealConn := NewConnection(conn, cid, s.Router)
+		dealConn := NewConnection(conn, cid, s.MessageHandler)
 		cid += 1
 		// Start.
 		go dealConn.Start()
@@ -94,7 +94,7 @@ func (s *Server) Serve() {
 	select {}
 }
 
-func (s *Server) AddRouter(router iface.IRouter) {
-	s.Router = router
+func (s *Server) AddRouter(messageId uint32, router iface.IRouter) {
+	s.MessageHandler.AddRouter(messageId, router)
 	fmt.Println("Add router successfully.")
 }

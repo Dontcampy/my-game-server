@@ -9,20 +9,20 @@ import (
 )
 
 type Connection struct {
-	Conn     *net.TCPConn
-	ConnID   uint32
-	isClosed bool
-	ExitChan chan bool
-	Router   iface.IRouter
+	Conn           *net.TCPConn
+	ConnID         uint32
+	isClosed       bool
+	ExitChan       chan bool
+	MessageHandler iface.IMessageHandler
 }
 
-func NewConnection(conn *net.TCPConn, connID uint32, router iface.IRouter) *Connection {
+func NewConnection(conn *net.TCPConn, connID uint32, messageHandler iface.IMessageHandler) *Connection {
 	c := &Connection{
-		Conn:     conn,
-		ConnID:   connID,
-		isClosed: false,
-		ExitChan: make(chan bool, 1),
-		Router:   router,
+		Conn:           conn,
+		ConnID:         connID,
+		isClosed:       false,
+		ExitChan:       make(chan bool, 1),
+		MessageHandler: messageHandler,
 	}
 
 	return c
@@ -76,9 +76,7 @@ func (c *Connection) StartReader() {
 
 		// call router handler
 		go func(request iface.IRequest) {
-			c.Router.PreHandle(request)
-			c.Router.Handle(request)
-			c.Router.PostHandle(request)
+			c.MessageHandler.DispatchHandler(request)
 		}(&req)
 	}
 }

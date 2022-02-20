@@ -22,6 +22,6 @@ func (p *PingRouter) Handle(request iface.IRequest) {
 
 func main() {
 	s := net.NewServer(utils.GlobalObject.Name)
-	s.AddRouter(&PingRouter{})
+	s.AddRouter(0, &PingRouter{})
 	s.Serve()
 }
