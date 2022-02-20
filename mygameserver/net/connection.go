@@ -75,9 +75,7 @@ func (c *Connection) StartReader() {
 		}
 
 		// call router handler
-		go func(request iface.IRequest) {
-			c.MessageHandler.DispatchHandler(request)
-		}(&req)
+		go c.MessageHandler.DispatchHandler(&req)
 	}
 }
 
