@@ -2,6 +2,7 @@ package utils
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/dontcampy/my-game-server/mygameserver/iface"
 	"io/ioutil"
 )
@@ -22,7 +23,8 @@ var GlobalObject *globalObj
 func (g *globalObj) Reload() {
 	data, err := ioutil.ReadFile("conf/config.json")
 	if err != nil {
-		panic(err)
+		fmt.Println(err)
+		return
 	}
 
 	err = json.Unmarshal(data, g)
