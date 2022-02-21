@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/dontcampy/my-game-server/mygameserver/iface"
 	"io/ioutil"
+	"runtime"
 )
 
 type globalObj struct {
@@ -13,9 +14,11 @@ type globalObj struct {
 	TcpPort   int
 	Name      string
 
-	Version        string
-	MaxConn        int
-	MaxPackageSize uint32
+	Version          string
+	MaxConn          int
+	MaxPackageSize   uint32
+	MaxTaskQueueSize uint32
+	WorkerPoolSize   uint32
 }
 
 var GlobalObject *globalObj
@@ -36,12 +39,14 @@ func (g *globalObj) Reload() {
 
 func init() {
 	GlobalObject = &globalObj{
-		Name:           "SiriusServerApp",
-		Version:        "V0.4",
-		TcpPort:        8999,
-		Host:           "0.0.0.0",
-		MaxConn:        1000,
-		MaxPackageSize: 4096,
+		Name:             "SiriusServerApp",
+		Version:          "V0.4",
+		TcpPort:          8999,
+		Host:             "0.0.0.0",
+		MaxConn:          1000,
+		MaxPackageSize:   4096,
+		MaxTaskQueueSize: 1024,
+		WorkerPoolSize:   uint32(runtime.NumCPU()),
 	}
 
 	GlobalObject.Reload()

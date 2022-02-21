@@ -3,15 +3,22 @@ package net
 import (
 	"fmt"
 	"github.com/dontcampy/my-game-server/mygameserver/iface"
+	"github.com/dontcampy/my-game-server/mygameserver/utils"
 	"strconv"
 )
 
 type MessageHandler struct {
-	apis map[uint32]iface.IRouter
+	apis         map[uint32]iface.IRouter
+	taskQueues   []chan iface.IRequest
+	workPoolSize uint32
 }
 
 func NewMessageHandler() *MessageHandler {
-	return &MessageHandler{apis: make(map[uint32]iface.IRouter)}
+	return &MessageHandler{
+		apis:         make(map[uint32]iface.IRouter),
+		taskQueues:   make([]chan iface.IRequest, utils.GlobalObject.WorkerPoolSize),
+		workPoolSize: utils.GlobalObject.WorkerPoolSize,
+	}
 }
 
 func (m *MessageHandler) DispatchHandler(request iface.IRequest) {
@@ -31,4 +38,21 @@ func (m *MessageHandler) AddRouter(messageId uint32, router iface.IRouter) {
 	}
 	m.apis[messageId] = router
 	fmt.Println("Add api messageId = ", messageId)
+}
+
+func (m *MessageHandler) StartWorkerPool() {
+	for i := 0; i < int(m.workPoolSize); i += 1 {
+		m.taskQueues[i] = make(chan iface.IRequest, utils.GlobalObject.MaxTaskQueueSize)
+		go m.StartWorker(i, m.taskQueues[i])
+	}
+}
+
+func (m *MessageHandler) StartWorker(workerId int, taskQueue chan iface.IRequest) {
+	fmt.Println("Worker ID = ", workerId, "is started...")
+	for true {
+		select {
+		case request := <-taskQueue:
+			m.DispatchHandler(request)
+		}
+	}
 }
