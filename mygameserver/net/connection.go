@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/dontcampy/my-game-server/mygameserver/iface"
+	"github.com/dontcampy/my-game-server/mygameserver/utils"
 	"io"
 	"net"
 )
@@ -77,7 +78,11 @@ func (c *Connection) StartReader() {
 		}
 
 		// call router handler
-		go c.MessageHandler.DispatchHandler(&req)
+		if utils.GlobalObject.WorkerPoolSize > 0 {
+			c.MessageHandler.SendMessageToTaskQueue(&req)
+		} else {
+			go c.MessageHandler.DispatchHandler(&req)
+		}
 	}
 }
 

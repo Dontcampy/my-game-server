@@ -48,6 +48,9 @@ func (s *Server) Start() {
 
 // Start listen from client
 func (s *Server) listen() {
+	// start worker pool
+	s.MessageHandler.StartWorkerPool()
+
 	// Resolve Address.
 	addr, err := net.ResolveTCPAddr(s.IPVersion, fmt.Sprintf("%s:%d", s.IP, s.Port))
 	if err != nil {

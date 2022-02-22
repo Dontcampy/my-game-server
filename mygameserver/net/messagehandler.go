@@ -43,11 +43,11 @@ func (m *MessageHandler) AddRouter(messageId uint32, router iface.IRouter) {
 func (m *MessageHandler) StartWorkerPool() {
 	for i := 0; i < int(m.workPoolSize); i += 1 {
 		m.taskQueues[i] = make(chan iface.IRequest, utils.GlobalObject.MaxTaskQueueSize)
-		go m.StartWorker(i, m.taskQueues[i])
+		go m.startWorker(i, m.taskQueues[i])
 	}
 }
 
-func (m *MessageHandler) StartWorker(workerId int, taskQueue chan iface.IRequest) {
+func (m *MessageHandler) startWorker(workerId int, taskQueue chan iface.IRequest) {
 	fmt.Println("Worker ID = ", workerId, "is started...")
 	for true {
 		select {
@@ -55,4 +55,10 @@ func (m *MessageHandler) StartWorker(workerId int, taskQueue chan iface.IRequest
 			m.DispatchHandler(request)
 		}
 	}
+}
+
+func (m *MessageHandler) SendMessageToTaskQueue(request iface.IRequest) {
+	workerId := request.GetConnection().GetConnId() % m.workPoolSize
+	fmt.Println("Add ConnId = ", request.GetConnection().GetConnId(), "request = ", request.GetHeader().Id, "to WorkerId = ", workerId)
+	m.taskQueues[workerId] <- request
 }
