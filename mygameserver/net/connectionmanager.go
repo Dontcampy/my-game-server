@@ -29,7 +29,7 @@ func (c *ConnectionManager) Remove(connId uint32) {
 	delete(c.connections, connId)
 	c.lock.Unlock()
 	fmt.Println("connId = ", connId,
-		" add to ConnectionManager successfully, manager size = ", c.Size())
+		" remove from ConnectionManager successfully, manager size = ", c.Size())
 }
 
 func (c *ConnectionManager) Get(connId uint32) (iface.IConnection, error) {

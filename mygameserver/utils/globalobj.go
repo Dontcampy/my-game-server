@@ -43,7 +43,7 @@ func init() {
 		Version:          "V0.4",
 		TcpPort:          8999,
 		Host:             "0.0.0.0",
-		MaxConn:          1000,
+		MaxConn:          3,
 		MaxPackageSize:   4096,
 		MaxTaskQueueSize: 1024,
 		WorkerPoolSize:   uint32(runtime.NumCPU()),

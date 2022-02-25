@@ -9,21 +9,25 @@ import (
 
 // Server IServer implement
 type Server struct {
-	Name           string
-	IPVersion      string
-	IP             string
-	Port           int
-	MessageHandler iface.IMessageHandler
+	Name              string
+	IPVersion         string
+	IP                string
+	Port              int
+	MessageHandler    iface.IMessageHandler
+	ConnectionManager iface.IConnectionManager
+	OnConnectionStart func(connection iface.IConnection)
+	OnConnectionStop  func(connection iface.IConnection)
 }
 
 // NewServer /*
 func NewServer(name string) iface.IServer {
 	s := &Server{
-		Name:           name,
-		IPVersion:      "tcp4",
-		IP:             utils.GlobalObject.Host,
-		Port:           utils.GlobalObject.TcpPort,
-		MessageHandler: NewMessageHandler(),
+		Name:              name,
+		IPVersion:         "tcp4",
+		IP:                utils.GlobalObject.Host,
+		Port:              utils.GlobalObject.TcpPort,
+		MessageHandler:    NewMessageHandler(),
+		ConnectionManager: NewConnectionManager(),
 	}
 	utils.GlobalObject.TcpServer = s
 	return s
@@ -76,17 +80,27 @@ func (s *Server) listen() {
 			continue
 		}
 
+		// Max connection restriction.
+		if s.ConnectionManager.Size() >= utils.GlobalObject.MaxConn {
+			conn.Close()
+			continue
+		}
+
 		// Init connection.
-		dealConn := NewConnection(conn, cid, s.MessageHandler)
+		dealConn := NewConnection(s, conn, cid, s.MessageHandler)
 		cid += 1
 		// Start.
 		go dealConn.Start()
 	}
 }
 
+func (s *Server) GetConnectionManager() iface.IConnectionManager {
+	return s.ConnectionManager
+}
+
 func (s *Server) Stop() {
-	//TODO implement me
-	panic("implement me")
+	fmt.Println("[STOP]my server name ", s.Name)
+	s.ConnectionManager.Clear()
 }
 
 func (s *Server) Serve() {
@@ -100,4 +114,26 @@ func (s *Server) Serve() {
 func (s *Server) AddRouter(messageId uint32, router iface.IRouter) {
 	s.MessageHandler.AddRouter(messageId, router)
 	fmt.Println("Add router successfully.")
+}
+
+func (s *Server) SetOnConnectionStart(f func(connection iface.IConnection)) {
+	s.OnConnectionStart = f
+}
+
+func (s *Server) SetOnConnectionStop(f func(connection iface.IConnection)) {
+	s.OnConnectionStop = f
+}
+
+func (s *Server) CallOnConnectionStart(connection iface.IConnection) {
+	if s.OnConnectionStart != nil {
+		fmt.Println("---> Call OnConnStart()...")
+		s.OnConnectionStart(connection)
+	}
+}
+
+func (s *Server) CallOnConnectionStop(connection iface.IConnection) {
+	if s.OnConnectionStop != nil {
+		fmt.Println("---> Call onConnStop()...")
+		s.OnConnectionStop(connection)
+	}
 }
