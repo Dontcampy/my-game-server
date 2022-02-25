@@ -7,6 +7,7 @@ import (
 	"github.com/dontcampy/my-game-server/mygameserver/utils"
 	"io"
 	"net"
+	"sync"
 )
 
 type Connection struct {
@@ -17,6 +18,8 @@ type Connection struct {
 	ExitChan       chan bool
 	MessageHandler iface.IMessageHandler
 	MessageChannel chan []byte
+	property       map[string]interface{}
+	propertyLock   sync.RWMutex
 }
 
 func NewConnection(server iface.IServer, conn *net.TCPConn, connID uint32, messageHandler iface.IMessageHandler) *Connection {
@@ -28,6 +31,7 @@ func NewConnection(server iface.IServer, conn *net.TCPConn, connID uint32, messa
 		ExitChan:       make(chan bool, 1),
 		MessageHandler: messageHandler,
 		MessageChannel: make(chan []byte),
+		property:       make(map[string]interface{}),
 	}
 	server.GetConnectionManager().Add(c)
 	return c
@@ -159,4 +163,27 @@ func (c *Connection) SendMessage(id uint32, content []byte) error {
 
 	c.MessageChannel <- pack
 	return nil
+}
+
+func (c *Connection) SetProperty(key string, value interface{}) {
+	c.propertyLock.Lock()
+	c.property[key] = value
+	c.propertyLock.Unlock()
+}
+
+func (c *Connection) GetProperty(key string) (interface{}, error) {
+	c.propertyLock.RLock()
+	value, ok := c.property[key]
+	c.propertyLock.RUnlock()
+	if ok {
+		return value, nil
+	} else {
+		return nil, errors.New("no property found")
+	}
+}
+
+func (c *Connection) RemoveProperty(key string) {
+	c.propertyLock.Lock()
+	delete(c.property, key)
+	c.propertyLock.Unlock()
 }
